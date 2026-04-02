@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MantAzienda — Gestione Manutenzione</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.9"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">MantAzienda</div>
+          <div class="brand-sub">Sistema Manutenzione</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Navigazione</div>
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.3"/></svg>
+          </span>
+          Dashboard
+        </a>
+        <a href="#" class="nav-item" data-page="equipment">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3z" fill="currentColor"/><path d="M3 21l9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor" opacity="0.4"/></svg>
+          </span>
+          Attrezzature
+        </a>
+        <a href="#" class="nav-item" data-page="maintenance">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          Interventi
+        </a>
+        <a href="#" class="nav-item" data-page="technicians">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          </span>
+          Tecnici
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-dot"></div>
+        <span class="footer-label">Sistema Attivo</span>
+        <span class="footer-version">v1.0</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+          <div class="breadcrumb" id="breadcrumb">Panoramica generale</div>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="globalSearch" placeholder="Cerca attrezzature, tecnici…" />
+          </div>
+          <button class="btn-primary" id="addBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+            Aggiungi
+          </button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page active">
+        <div class="stats-grid">
+          <div class="stat-card stat-total">
+            <div class="stat-header"><div class="stat-icon-wrap">🏭</div></div>
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Totale Attrezzature</div>
+          </div>
+          <div class="stat-card stat-ok">
+            <div class="stat-header"><div class="stat-icon-wrap">✅</div></div>
+            <div class="stat-value" id="statOk">—</div>
+            <div class="stat-label">Operative</div>
+          </div>
+          <div class="stat-card stat-warn">
+            <div class="stat-header"><div class="stat-icon-wrap">⚙️</div></div>
+            <div class="stat-value" id="statMaint">—</div>
+            <div class="stat-label">In Manutenzione</div>
+          </div>
+          <div class="stat-card stat-err">
+            <div class="stat-header"><div class="stat-icon-wrap">⚠️</div></div>
+            <div class="stat-value" id="statFault">—</div>
+            <div class="stat-label">In Guasto</div>
+          </div>
+          <div class="stat-card stat-crit">
+            <div class="stat-header"><div class="stat-icon-wrap">🚨</div></div>
+            <div class="stat-value" id="statCrit">—</div>
+            <div class="stat-label">Interventi Critici</div>
+          </div>
+        </div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header"><h2>Ultimi Interventi</h2><span class="card-pill">Recenti</span></div>
+            <div class="card-body" id="recentMaintenance">
+              <div class="skeleton-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>Stato Attrezzature</h2><span class="card-pill">Live</span></div>
+            <div class="card-body" id="equipmentStatusList">
+              <div class="skeleton-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EQUIPMENT -->
+      <section id="page-equipment" class="page">
+        <div class="page-controls">
+          <div class="filter-group">
+            <select id="filterStatus" class="select-input">
+              <option value="">Tutti gli stati</option>
+              <option value="operativo">Operativo</option>
+              <option value="manutenzione">Manutenzione</option>
+              <option value="guasto">Guasto</option>
+            </select>
+            <select id="filterCategory" class="select-input">
+              <option value="">Tutte le categorie</option>
+              <option value="Macchinario">Macchinario</option>
+              <option value="Elettrico">Elettrico</option>
+              <option value="Pneumatica">Pneumatica</option>
+              <option value="Saldatura">Saldatura</option>
+              <option value="Movimentazione">Movimentazione</option>
+              <option value="Informatica">Informatica</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Attrezzatura</th><th>Categoria</th><th>Ubicazione</th><th>Stato</th><th>Prossima Manutenzione</th><th>Azioni</th></tr></thead>
+            <tbody id="equipmentBody"><tr><td colspan="6" class="loading-cell"><div class="loading-spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- MAINTENANCE -->
+      <section id="page-maintenance" class="page">
+        <div class="page-controls">
+          <div class="filter-group">
+            <select id="filterMaintStatus" class="select-input">
+              <option value="">Tutti gli stati</option>
+              <option value="programmata">Programmata</option>
+              <option value="in corso">In Corso</option>
+              <option value="completata">Completata</option>
+            </select>
+            <select id="filterPriority" class="select-input">
+              <option value="">Tutte le priorità</option>
+              <option value="critica">Critica</option>
+              <option value="alta">Alta</option>
+              <option value="normale">Normale</option>
+              <option value="bassa">Bassa</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Attrezzatura</th><th>Tipo</th><th>Tecnico</th><th>Priorità</th><th>Stato</th><th>Data Programmata</th><th>Costo</th><th>Azioni</th></tr></thead>
+            <tbody id="maintenanceBody"><tr><td colspan="8" class="loading-cell"><div class="loading-spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TECHNICIANS -->
+      <section id="page-technicians" class="page">
+        <div class="technicians-grid" id="techniciansGrid">
+          <div class="loading-spinner" style="margin:40px auto"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: nessun style inline — aperto/chiuso solo tramite classe CSS .open -->
+  <div id="modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modalTitle"></h2>
+        <button class="modal-close" id="modalClose" title="Chiudi">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
