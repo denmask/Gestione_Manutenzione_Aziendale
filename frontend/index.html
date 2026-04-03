@@ -50,6 +50,22 @@
           </span>
           Tecnici
         </a>
+
+        <div class="nav-section-label" style="margin-top:10px">Analisi</div>
+
+        <a href="#" class="nav-item" data-page="alerts">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" fill="none"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+          </span>
+          Scadenze & Alert
+          <span class="nav-badge" id="alertBadge" style="display:none"></span>
+        </a>
+        <a href="#" class="nav-item" data-page="report">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4" height="9" rx="1" fill="currentColor" opacity="0.5"/><rect x="10" y="7" width="4" height="14" rx="1" fill="currentColor" opacity="0.75"/><rect x="17" y="3" width="4" height="18" rx="1" fill="currentColor"/></svg>
+          </span>
+          Report
+        </a>
       </nav>
       <div class="sidebar-footer">
         <div class="status-dot"></div>
@@ -183,10 +199,74 @@
           <div class="loading-spinner" style="margin:40px auto"></div>
         </div>
       </section>
+
+      <!-- SCADENZE & ALERT -->
+      <section id="page-alerts" class="page">
+        <div class="alerts-grid">
+          <div class="card">
+            <div class="card-header">
+              <h2>⛔ Manutenzioni Scadute</h2>
+              <span class="card-pill pill-red" id="pillOverdue">—</span>
+            </div>
+            <div class="card-body" id="alertsOverdue">
+              <div class="loading-spinner" style="margin:20px auto"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>⚠️ In Scadenza (30 giorni)</h2>
+              <span class="card-pill pill-yellow" id="pillSoon">—</span>
+            </div>
+            <div class="card-body" id="alertsSoon">
+              <div class="loading-spinner" style="margin:20px auto"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>🚨 Interventi Critici Aperti</h2>
+              <span class="card-pill pill-red" id="pillCritical">—</span>
+            </div>
+            <div class="card-body" id="alertsCritical">
+              <div class="loading-spinner" style="margin:20px auto"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>🔧 Attrezzature Ferme</h2>
+              <span class="card-pill pill-yellow" id="pillFermo">—</span>
+            </div>
+            <div class="card-body" id="alertsFermo">
+              <div class="loading-spinner" style="margin:20px auto"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT -->
+      <section id="page-report" class="page">
+        <div class="report-grid">
+          <div class="card">
+            <div class="card-header"><h2>📊 Interventi per Stato</h2></div>
+            <div class="card-body" id="reportByStatus"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>🎯 Interventi per Priorità</h2></div>
+            <div class="card-body" id="reportByPriority"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>💶 Costo per Attrezzatura</h2><span class="card-pill">Top 5</span></div>
+            <div class="card-body" id="reportByCost"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>👷 Interventi per Tecnico</h2></div>
+            <div class="card-body" id="reportByTech"></div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
-  <!-- MODAL: nessun style inline — aperto/chiuso solo tramite classe CSS .open -->
   <div id="modal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">

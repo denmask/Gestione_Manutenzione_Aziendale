@@ -49,6 +49,13 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
+  // Controlla se esistono interventi di manutenzione collegati a questa attrezzatura
+  const linkedMaintenance = db.prepare('SELECT COUNT(*) as count FROM maintenance WHERE equipment_id = ?').get(req.params.id);
+  if (linkedMaintenance.count > 0) {
+    return res.status(409).json({
+      error: `Impossibile eliminare: questa attrezzatura ha ${linkedMaintenance.count} intervento/i di manutenzione collegato/i. Elimina prima gli interventi associati.`
+    });
+  }
   const result = db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Non trovato' });
   res.json({ message: 'Eliminato con successo' });

@@ -44,42 +44,53 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('it-IT');
 }
 
+function setLoadingError(id, msg) {
+  const el = $(id);
+  if (el) el.innerHTML = `<p class="alert-empty" style="color:var(--red)">${msg}</p>`;
+}
+
+async function safeFetch(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
 async function fetchStats() {
   try {
-    const r = await fetch(`${API}/equipment/stats`);
-    const s = await r.json();
+    const s = await safeFetch(`${API}/equipment/stats`);
     $('statTotal').textContent = s.total;
     $('statOk').textContent = s.operativo;
     $('statMaint').textContent = s.manutenzione;
     $('statFault').textContent = s.guasto;
     $('statCrit').textContent = s.critiche;
-  } catch {}
+  } catch {
+    ['statTotal','statOk','statMaint','statFault','statCrit'].forEach(id => $(id).textContent = '—');
+  }
 }
 
 async function fetchDashboard() {
   fetchStats();
   try {
-    const [mRes, eRes] = await Promise.all([
-      fetch(`${API}/maintenance`),
-      fetch(`${API}/equipment`)
+    const [maintenances, equipments] = await Promise.all([
+      safeFetch(`${API}/maintenance`),
+      safeFetch(`${API}/equipment`)
     ]);
-    const maintenances = await mRes.json();
-    const equipments = await eRes.json();
-
     const mEl = $('recentMaintenance');
     const recent = maintenances.slice(0, 6);
     mEl.innerHTML = recent.length ? recent.map(m => {
       const dotClass = m.priority === 'critica' ? 'maint-dot-crit' : m.priority === 'alta' ? 'maint-dot-high' : 'maint-dot-norm';
       return `<div class="maintenance-item"><div class="maint-dot ${dotClass}"></div><div class="maint-info"><div class="maint-name">${m.equipment_name || '—'}</div><div class="maint-sub">${m.type} · ${m.technician_name || 'Non assegnato'}</div></div><span class="badge ${getBadgeClass(m.status, 'mstatus')}">${m.status}</span></div>`;
     }).join('') : '<p style="color:var(--text-muted);text-align:center;padding:20px">Nessun intervento</p>';
-
     const eEl = $('equipmentStatusList');
     eEl.innerHTML = equipments.slice(0, 6).map(e => `
       <div class="equip-status-item">
         <div><div class="equip-status-name">${e.name}</div><div class="equip-status-loc">📍 ${e.location}</div></div>
         <span class="badge ${getBadgeClass(e.status, 'status')}">${e.status}</span>
       </div>`).join('');
-  } catch {}
+  } catch {
+    $('recentMaintenance').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px">Errore caricamento dati</p>';
+    $('equipmentStatusList').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px">Errore caricamento dati</p>';
+  }
 }
 
 async function fetchEquipment() {
@@ -91,8 +102,7 @@ async function fetchEquipment() {
   if (status) url += `status=${encodeURIComponent(status)}&`;
   if (category) url += `category=${encodeURIComponent(category)}&`;
   try {
-    const r = await fetch(url);
-    const data = await r.json();
+    const data = await safeFetch(url);
     const tbody = $('equipmentBody');
     tbody.innerHTML = data.length ? data.map((e, i) => `
       <tr style="animation-delay:${i * 0.04}s">
@@ -106,7 +116,9 @@ async function fetchEquipment() {
           <button class="btn-icon btn-del" onclick="deleteEquipment(${e.id})" title="Elimina">🗑</button>
         </div></td>
       </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Nessuna attrezzatura trovata</td></tr>`;
-  } catch {}
+  } catch {
+    $('equipmentBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--red)">Errore caricamento attrezzature</td></tr>`;
+  }
 }
 
 async function fetchMaintenance() {
@@ -116,8 +128,7 @@ async function fetchMaintenance() {
   if (status) url += `status=${encodeURIComponent(status)}&`;
   if (priority) url += `priority=${encodeURIComponent(priority)}&`;
   try {
-    const r = await fetch(url);
-    const data = await r.json();
+    const data = await safeFetch(url);
     const tbody = $('maintenanceBody');
     tbody.innerHTML = data.length ? data.map((m, i) => `
       <tr style="animation-delay:${i * 0.04}s">
@@ -133,7 +144,9 @@ async function fetchMaintenance() {
           <button class="btn-icon btn-del" onclick="deleteMaintenance(${m.id})" title="Elimina">🗑</button>
         </div></td>
       </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">Nessun intervento trovato</td></tr>`;
-  } catch {}
+  } catch {
+    $('maintenanceBody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--red)">Errore caricamento interventi</td></tr>`;
+  }
 }
 
 async function fetchTechnicians() {
@@ -141,8 +154,7 @@ async function fetchTechnicians() {
   let url = `${API}/technicians?`;
   if (search) url += `search=${encodeURIComponent(search)}&`;
   try {
-    const r = await fetch(url);
-    const data = await r.json();
+    const data = await safeFetch(url);
     const grid = $('techniciansGrid');
     grid.innerHTML = data.length ? data.map((t, i) => `
       <div class="tech-card" style="animation-delay:${i * 0.07}s">
@@ -161,7 +173,144 @@ async function fetchTechnicians() {
           </div>
         </div>
       </div>`).join('') : '<p style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px">Nessun tecnico trovato</p>';
-  } catch {}
+  } catch {
+    $('techniciansGrid').innerHTML = '<p style="color:var(--red);grid-column:1/-1;text-align:center;padding:40px">Errore caricamento tecnici</p>';
+  }
+}
+
+async function fetchAlerts() {
+  const alertIds = ['alertsOverdue','alertsSoon','alertsCritical','alertsFermo'];
+  alertIds.forEach(id => {
+    $(id).innerHTML = '<div class="loading-spinner" style="margin:20px auto"></div>';
+  });
+  ['pillOverdue','pillSoon','pillCritical','pillFermo'].forEach(id => $(id).textContent = '—');
+
+  try {
+    const [equipments, maintenances] = await Promise.all([
+      safeFetch(`${API}/equipment`),
+      safeFetch(`${API}/maintenance`)
+    ]);
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+
+    const overdue = equipments.filter(e => e.next_maintenance && new Date(e.next_maintenance) < today);
+    const soon = equipments.filter(e => {
+      if (!e.next_maintenance) return false;
+      const d = new Date(e.next_maintenance);
+      return d >= today && d <= in30;
+    });
+    const criticalOpen = maintenances.filter(m => m.priority === 'critica' && m.status !== 'completata');
+    const fermo = equipments.filter(e => e.status === 'guasto' || e.status === 'manutenzione');
+
+    const totalAlert = overdue.length + criticalOpen.length;
+    const badge = $('alertBadge');
+    if (totalAlert > 0) { badge.textContent = totalAlert; badge.style.display = 'inline-flex'; }
+    else { badge.style.display = 'none'; }
+
+    const emptyMsg = txt => `<p class="alert-empty">${txt}</p>`;
+    const alertRow = (icon, title, sub, badgeClass, badgeText) => `
+      <div class="alert-row">
+        <div class="alert-icon">${icon}</div>
+        <div class="alert-info"><div class="alert-name">${title}</div><div class="alert-sub">${sub}</div></div>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>`;
+
+    $('pillOverdue').textContent = overdue.length;
+    $('alertsOverdue').innerHTML = overdue.length
+      ? overdue.map(e => alertRow('📅', e.name, `📍 ${e.location} · scaduta il ${formatDate(e.next_maintenance)}`, 'badge-red', e.status)).join('')
+      : emptyMsg('Nessuna manutenzione scaduta ✅');
+
+    $('pillSoon').textContent = soon.length;
+    $('alertsSoon').innerHTML = soon.length
+      ? soon.map(e => {
+          const days = Math.ceil((new Date(e.next_maintenance) - today) / 86400000);
+          return alertRow('⏰', e.name, `📍 ${e.location} · tra ${days} giorno/i`, 'badge-yellow', formatDate(e.next_maintenance));
+        }).join('')
+      : emptyMsg('Nessuna scadenza nei prossimi 30 giorni ✅');
+
+    $('pillCritical').textContent = criticalOpen.length;
+    $('alertsCritical').innerHTML = criticalOpen.length
+      ? criticalOpen.map(m => alertRow('🔴', m.equipment_name || '—', `${m.type} · ${m.technician_name || 'Non assegnato'}`, 'badge-red', m.status)).join('')
+      : emptyMsg('Nessun intervento critico aperto ✅');
+
+    $('pillFermo').textContent = fermo.length;
+    $('alertsFermo').innerHTML = fermo.length
+      ? fermo.map(e => alertRow('🛑', e.name, `📍 ${e.location}`, getBadgeClass(e.status, 'status'), e.status)).join('')
+      : emptyMsg('Tutte le attrezzature sono operative ✅');
+
+  } catch(err) {
+    console.error('fetchAlerts error:', err);
+    alertIds.forEach(id => setLoadingError(id, 'Errore caricamento — verifica che il server sia attivo'));
+    ['pillOverdue','pillSoon','pillCritical','pillFermo'].forEach(id => $(id).textContent = '!');
+  }
+}
+
+function renderBarChart(containerId, items, colorFn) {
+  if (!items.length) { $(containerId).innerHTML = '<p class="alert-empty">Nessun dato disponibile</p>'; return; }
+  const max = Math.max(...items.map(i => i.value));
+  $(containerId).innerHTML = items.map(item => `
+    <div class="report-bar-row">
+      <div class="report-bar-label">${item.label}</div>
+      <div class="report-bar-track">
+        <div class="report-bar-fill" style="width:${max > 0 ? (item.value / max * 100) : 0}%;background:${colorFn(item.label)}"></div>
+      </div>
+      <div class="report-bar-value">${item.display || item.value}</div>
+    </div>`).join('');
+}
+
+async function fetchReport() {
+  ['reportByStatus','reportByPriority','reportByCost','reportByTech'].forEach(id => {
+    $(id).innerHTML = '<div class="loading-spinner" style="margin:20px auto"></div>';
+  });
+  try {
+    const maintenances = await safeFetch(`${API}/maintenance`);
+
+    const byStatus = ['programmata','in corso','completata'].map(s => ({
+      label: s, value: maintenances.filter(m => m.status === s).length
+    }));
+    renderBarChart('reportByStatus', byStatus, l => {
+      if (l === 'completata') return 'var(--green)';
+      if (l === 'in corso') return 'var(--yellow)';
+      return 'var(--accent)';
+    });
+
+    const byPriority = ['critica','alta','normale','bassa']
+      .map(p => ({ label: p, value: maintenances.filter(m => m.priority === p).length }))
+      .filter(x => x.value > 0);
+    renderBarChart('reportByPriority', byPriority, l => {
+      if (l === 'critica') return 'var(--red)';
+      if (l === 'alta') return 'var(--orange)';
+      if (l === 'normale') return 'var(--accent)';
+      return 'var(--text-muted)';
+    });
+
+    const costMap = {};
+    maintenances.forEach(m => {
+      if (!m.equipment_name) return;
+      costMap[m.equipment_name] = (costMap[m.equipment_name] || 0) + (Number(m.cost) || 0);
+    });
+    const byCost = Object.entries(costMap)
+      .map(([label, value]) => ({ label, value, display: '€ ' + value.toFixed(0) }))
+      .sort((a, b) => b.value - a.value).slice(0, 5);
+    renderBarChart('reportByCost', byCost, () => 'var(--accent)');
+
+    const techMap = {};
+    maintenances.forEach(m => {
+      const name = m.technician_name || 'Non assegnato';
+      techMap[name] = (techMap[name] || 0) + 1;
+    });
+    const byTech = Object.entries(techMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
+    renderBarChart('reportByTech', byTech, () => 'var(--green)');
+
+  } catch(err) {
+    console.error('fetchReport error:', err);
+    ['reportByStatus','reportByPriority','reportByCost','reportByTech'].forEach(id =>
+      setLoadingError(id, 'Errore caricamento — verifica che il server sia attivo')
+    );
+  }
 }
 
 function openModal(title, body) {
@@ -172,8 +321,7 @@ function openModal(title, body) {
 
 function closeModal() {
   $('modal').classList.remove('open');
-  editingId = null;
-  editingType = null;
+  editingId = null; editingType = null;
 }
 
 function getEquipmentForm(data = {}) {
@@ -215,10 +363,10 @@ function getTechnicianForm(data = {}) {
 }
 
 async function getMaintenanceForm(data = {}) {
-  const eRes = await fetch(`${API}/equipment`);
-  const equipments = await eRes.json();
-  const tRes = await fetch(`${API}/technicians`);
-  const techs = await tRes.json();
+  const [equipments, techs] = await Promise.all([
+    safeFetch(`${API}/equipment`),
+    safeFetch(`${API}/technicians`)
+  ]);
   return `<div class="form-grid">
     <div class="form-group full"><label>Attrezzatura *</label><select class="form-input" id="f_equip">
       ${equipments.map(e => `<option value="${e.id}" ${data.equipment_id==e.id?'selected':''}>${e.name}</option>`).join('')}
@@ -248,28 +396,32 @@ async function getMaintenanceForm(data = {}) {
 }
 
 async function openAddModal() {
-  if (currentPage === 'equipment') { editingId = null; editingType = 'equipment'; openModal('➕ Nuova Attrezzatura', getEquipmentForm()); }
-  else if (currentPage === 'technicians') { editingId = null; editingType = 'technician'; openModal('➕ Nuovo Tecnico', getTechnicianForm()); }
-  else if (currentPage === 'maintenance') { editingId = null; editingType = 'maintenance'; openModal('➕ Nuovo Intervento', await getMaintenanceForm()); }
+  if (currentPage === 'equipment') {
+    editingId = null; editingType = 'equipment';
+    openModal('➕ Nuova Attrezzatura', getEquipmentForm());
+  } else if (currentPage === 'technicians') {
+    editingId = null; editingType = 'technician';
+    openModal('➕ Nuovo Tecnico', getTechnicianForm());
+  } else if (['maintenance','dashboard','alerts'].includes(currentPage)) {
+    editingId = null; editingType = 'maintenance';
+    openModal('➕ Nuovo Intervento', await getMaintenanceForm());
+  }
 }
 
 async function openEditEquipment(id) {
-  const r = await fetch(`${API}/equipment/${id}`);
-  const data = await r.json();
+  const data = await safeFetch(`${API}/equipment/${id}`);
   editingId = id; editingType = 'equipment';
   openModal('✏️ Modifica Attrezzatura', getEquipmentForm(data));
 }
 
 async function openEditTechnician(id) {
-  const r = await fetch(`${API}/technicians/${id}`);
-  const data = await r.json();
+  const data = await safeFetch(`${API}/technicians/${id}`);
   editingId = id; editingType = 'technician';
   openModal('✏️ Modifica Tecnico', getTechnicianForm(data));
 }
 
 async function openEditMaintenance(id) {
-  const r = await fetch(`${API}/maintenance`);
-  const all = await r.json();
+  const all = await safeFetch(`${API}/maintenance`);
   const data = all.find(m => m.id == id);
   editingId = id; editingType = 'maintenance';
   openModal('✏️ Modifica Intervento', await getMaintenanceForm(data));
@@ -286,7 +438,7 @@ async function saveEquipment() {
     const url = editingId ? `${API}/equipment/${editingId}` : `${API}/equipment`;
     const method = editingId ? 'PUT' : 'POST';
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error();
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore salvataggio', 'error'); return; }
     showToast(editingId ? 'Attrezzatura aggiornata!' : 'Attrezzatura aggiunta!');
     closeModal(); fetchEquipment(); fetchStats();
   } catch { showToast('Errore durante il salvataggio', 'error'); }
@@ -299,7 +451,7 @@ async function saveTechnician() {
     const url = editingId ? `${API}/technicians/${editingId}` : `${API}/technicians`;
     const method = editingId ? 'PUT' : 'POST';
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error();
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore salvataggio', 'error'); return; }
     showToast(editingId ? 'Tecnico aggiornato!' : 'Tecnico aggiunto!');
     closeModal(); fetchTechnicians();
   } catch { showToast('Errore durante il salvataggio', 'error'); }
@@ -312,20 +464,26 @@ async function saveMaintenance() {
     cost: $('f_cost').value, scheduled_date: $('f_sched').value, completed_date: $('f_completed').value,
     description: $('f_desc').value
   };
+  if (!body.equipment_id) { showToast("Seleziona un'attrezzatura", 'error'); return; }
   try {
     const url = editingId ? `${API}/maintenance/${editingId}` : `${API}/maintenance`;
     const method = editingId ? 'PUT' : 'POST';
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error();
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore salvataggio', 'error'); return; }
     showToast(editingId ? 'Intervento aggiornato!' : 'Intervento creato!');
-    closeModal(); fetchMaintenance(); fetchStats();
+    closeModal();
+    fetchMaintenance(); fetchStats();
+    if (currentPage === 'dashboard') fetchDashboard();
+    if (currentPage === 'alerts') fetchAlerts();
+    if (currentPage === 'report') fetchReport();
   } catch { showToast('Errore durante il salvataggio', 'error'); }
 }
 
 async function deleteEquipment(id) {
   if (!confirm('Eliminare questa attrezzatura?')) return;
   try {
-    await fetch(`${API}/equipment/${id}`, { method: 'DELETE' });
+    const r = await fetch(`${API}/equipment/${id}`, { method: 'DELETE' });
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore eliminazione', 'error'); return; }
     showToast('Attrezzatura eliminata');
     fetchEquipment(); fetchStats();
   } catch { showToast('Errore eliminazione', 'error'); }
@@ -334,7 +492,8 @@ async function deleteEquipment(id) {
 async function deleteTechnician(id) {
   if (!confirm('Eliminare questo tecnico?')) return;
   try {
-    await fetch(`${API}/technicians/${id}`, { method: 'DELETE' });
+    const r = await fetch(`${API}/technicians/${id}`, { method: 'DELETE' });
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore eliminazione', 'error'); return; }
     showToast('Tecnico eliminato');
     fetchTechnicians();
   } catch { showToast('Errore eliminazione', 'error'); }
@@ -343,9 +502,13 @@ async function deleteTechnician(id) {
 async function deleteMaintenance(id) {
   if (!confirm('Eliminare questo intervento?')) return;
   try {
-    await fetch(`${API}/maintenance/${id}`, { method: 'DELETE' });
+    const r = await fetch(`${API}/maintenance/${id}`, { method: 'DELETE' });
+    if (!r.ok) { const err = await r.json(); showToast(err.error || 'Errore eliminazione', 'error'); return; }
     showToast('Intervento eliminato');
     fetchMaintenance(); fetchStats();
+    if (currentPage === 'dashboard') fetchDashboard();
+    if (currentPage === 'alerts') fetchAlerts();
+    if (currentPage === 'report') fetchReport();
   } catch { showToast('Errore eliminazione', 'error'); }
 }
 
@@ -355,14 +518,24 @@ function navigateTo(page) {
   document.querySelector(`[data-page="${page}"]`).classList.add('active');
   $(`page-${page}`).classList.add('active');
   currentPage = page;
-  const titles = { dashboard: 'Dashboard', equipment: 'Attrezzature', maintenance: 'Interventi di Manutenzione', technicians: 'Gestione Tecnici' };
-  const subs = { dashboard: 'Panoramica generale', equipment: 'Elenco attrezzature aziendali', maintenance: 'Pianificazione e storico interventi', technicians: 'Team di manutenzione' };
+  const titles = {
+    dashboard: 'Dashboard', equipment: 'Attrezzature',
+    maintenance: 'Interventi di Manutenzione', technicians: 'Gestione Tecnici',
+    alerts: 'Scadenze & Alert', report: 'Report'
+  };
+  const subs = {
+    dashboard: 'Panoramica generale', equipment: 'Elenco attrezzature aziendali',
+    maintenance: 'Pianificazione e storico interventi', technicians: 'Team di manutenzione',
+    alerts: 'Controllo scadenze e situazioni critiche', report: 'Analisi e statistiche'
+  };
   $('pageTitle').textContent = titles[page];
   $('breadcrumb').textContent = subs[page];
-  if (page === 'dashboard') fetchDashboard();
-  if (page === 'equipment') fetchEquipment();
+  if (page === 'dashboard')   fetchDashboard();
+  if (page === 'equipment')   fetchEquipment();
   if (page === 'maintenance') fetchMaintenance();
   if (page === 'technicians') fetchTechnicians();
+  if (page === 'alerts')      fetchAlerts();
+  if (page === 'report')      fetchReport();
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -384,3 +557,4 @@ $('filterMaintStatus').addEventListener('change', fetchMaintenance);
 $('filterPriority').addEventListener('change', fetchMaintenance);
 
 fetchDashboard();
+fetchAlerts();
